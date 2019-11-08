@@ -1,3 +1,58 @@
 {% extends "layout.html" %} {% block content %}
-<h1>{{ current_user.username }}</h1>
+<body>
+  <h1>{{ current_user.username }}</h1>
+  <textarea id="chat" cols="80" rows="20"></textarea><br /><br />
+
+  <form method="POST" action="">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      {{ form.message(class="form-control form-control-lg message") }}
+    </div>
+    <div class="form-group">
+      {{ form.submit(class="btn btn-outline-info") }}
+    </div>
+  </form>
+  <a href="#" onclick="leave_room();">Leave this room</a>
+  <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.3/socket.io.min.js"></script>
+  <script type="text/javascript">
+    var socket = io.connect("http://" + document.domain + ":" + location.port);
+    socket.on("connect", function() {
+      socket.emit("joined", {});
+      var form = $("form").on("submit", function(e) {
+        e.preventDefault();
+        let user_name;
+        let user_input = $("input.message").val();
+        socket.emit("message_handler", {
+          user_name: user_name,
+          message: user_input
+        });
+        $("input.message")
+          .val("")
+          .focus();
+      });
+    });
+    socket.on("status", function(data) {
+      $("#chat").val($("#chat").val() + "<" + data.msg + ">\n");
+      $("#chat").scrollTop($("#chat")[0].scrollHeight);
+    });
+
+    socket.on("message", function(msg) {
+      console.log(msg);
+
+      $("#chat").val(
+        $("#chat").val() + msg.user_name + ": " + msg.message + "\n"
+      );
+      $("#chat").scrollTop($("#chat")[0].scrollHeight);
+    });
+    function leave_room() {
+      socket.emit("left", {}, function() {
+        socket.disconnect();
+
+        window.location.href = "{{ url_for('index') }}";
+      });
+    }
+  </script>
+</body>
 {% endblock content %}

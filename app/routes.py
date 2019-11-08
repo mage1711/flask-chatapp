@@ -1,8 +1,9 @@
 from flask import render_template, url_for, redirect, request
-from app import app, db, bcrypt
-from app.forms import RegistrationForm, LoginForm
+from app import app, db, bcrypt, socketio
+from app.forms import RegistrationForm, LoginForm, MessageForm
 from app.database import User
 from flask_login import login_user, current_user, logout_user, login_required
+from flask_socketio import emit
 
 
 @app.route('/')
@@ -47,7 +48,32 @@ def logout():
     return redirect(url_for('index'))
 
 
-@app.route("/rooms")
+@app.route("/rooms", methods=['GET', 'POST'])
 @login_required
 def rooms():
-    return render_template('rooms.html', title='Rooms')
+    form = MessageForm()
+    if form.validate_on_submit():
+        print(form.message.data)
+        emit('message', {'msg': current_user.username +
+                         ':' + form.message.data})
+        print(form.message.data)
+    return render_template("rooms.html", title='Rooms', form=form)
+
+
+@socketio.on('joined')
+def joined(message):
+
+    emit('status', {'msg': current_user.username +
+                    ' has joined the room.'})
+
+
+@socketio.on('left')
+def left(message):
+    emit('status', {'msg': current_user.username +
+                    ' has left the room.'})
+
+
+@socketio.on('message_handler')
+def HandleMessage(message, methods=['GET', 'POST']):
+    message['user_name'] = current_user.username
+    socketio.emit('message', message)
