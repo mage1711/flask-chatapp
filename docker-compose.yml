@@ -17,7 +17,7 @@ services:
       context: ./
       dockerfile: Dockerfile
     container_name: flask
-    command: gunicorn -w 1 --threads 100 --bind 0.0.0.0:8000 app:app
+    command: gunicorn --worker-class eventlet -w 1 --bind 0.0.0.0:8000 app:app
     ports:
       - 8000:8000
     volumes:
