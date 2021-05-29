@@ -23,7 +23,7 @@ services:
     networks:
       my-network:
         aliases:
-          - chat-app
+          - flask-app
 
 networks:
   my-network:
